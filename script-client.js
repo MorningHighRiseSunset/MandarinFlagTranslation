@@ -13,6 +13,18 @@ const i18n = {
         manualTargetLabel: "Translate to:",
         autoOption: "Auto-detect"
     },
+    zh: {
+        placeholder: "输入一个单词或短语...",
+        button: "翻译",
+        help: "提示：使用简短的短语以获得最佳效果",
+        errorServer: "无法连接到翻译服务器。请检查其是否在运行。",
+        detectedPrefix: "检测到:",
+        translatingTo: "翻译到:",
+        manualMode: "手动模式",
+        manualSourceLabel: "我说：",
+        manualTargetLabel: "翻译到：",
+        autoOption: "自动检测"
+    },
     es: {
         placeholder: "Escriba una palabra o frase...",
         button: "Traducir",

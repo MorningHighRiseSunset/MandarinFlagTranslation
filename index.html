@@ -1,23 +1,23 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="zh">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Spanish Flag Translation</title>
+    <title>Mandarin Translation Assistant</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
         <header class="site-header">
             <div class="header-top">
-                <h1>Spanish Translation Assistant (Asistente de Traducción al Español)</h1>
+                <h1>Mandarin Translation Assistant (中文翻译助手)</h1>
             </div>
-            <p class="tag">Fast, friendly translations with playful text animations (Traducciones rápidas y amigables con animaciones de texto)</p>
+            <p class="tag">快速、友好的翻译，带有有趣的文本动画</p>
         </header>
 
         <form id="translateForm" class="controls" action="#" onsubmit="return false;">
-            <label for="input" class="visually-hidden">Text to translate (Texto a traducir)</label>
-            <input type="text" id="input" inputmode="text" autocomplete="off" placeholder="Type a word or phrase... (Escriba una palabra o frase...)">
+            <label for="input" class="visually-hidden">要翻译的文本</label>
+            <input type="text" id="input" inputmode="text" autocomplete="off" placeholder="输入一个单词或短语...">
         </form>
 
         <div id="detectBar" class="detect-bar" aria-live="polite">
@@ -52,7 +52,7 @@
 
         <div id="output" class="output" role="status" aria-live="polite"></div>
 
-        <small class="help">Tip: use short phrases for best results. Tap the button or press Enter. (Consejo: use frases cortas para mejores resultados. Pulse el botón o presione Enter.)</small>
+        <small class="help">提示：使用简短的短语以获得最佳效果。</small>
     </div>
         <!-- Modal and dropdowns removed: auto-detecting language as you type -->
     <script src="script-client.js"></script>
