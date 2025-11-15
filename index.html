@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Spanish Flag Translation</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="site-header">
+            <div class="header-top">
+                <h1>Spanish Translation Assistant (Asistente de Traducción al Español)</h1>
+            </div>
+            <p class="tag">Fast, friendly translations with playful text animations (Traducciones rápidas y amigables con animaciones de texto)</p>
+        </header>
+
+        <form id="translateForm" class="controls" action="#" onsubmit="return false;">
+            <label for="input" class="visually-hidden">Text to translate (Texto a traducir)</label>
+            <input type="text" id="input" inputmode="text" autocomplete="off" placeholder="Type a word or phrase... (Escriba una palabra o frase...)">
+        </form>
+
+        <div id="detectBar" class="detect-bar" aria-live="polite">
+            <div id="detectedInfo" class="detected-info">Detected: — → Translating to: —</div>
+            <label class="manual-toggle">
+                <input type="checkbox" id="manualToggle"> <span id="manualToggleLabel">Manual mode</span>
+            </label>
+        </div>
+
+        <div id="manualControls" class="manual-controls" aria-hidden="true">
+            <label for="manualSource" class="manual-label">I speak / Hablo:</label>
+            <select id="manualSource" class="manual-select">
+                <option value="">Auto-detect</option>
+                <option value="english">English</option>
+                <option value="spanish">Spanish (Español)</option>
+                <option value="french">French (Français)</option>
+                <option value="hindi">Hindi (हिंदी)</option>
+                <option value="mandarin">Mandarin (中文)</option>
+                <option value="vietnamese">Vietnamese (Tiếng Việt)</option>
+            </select>
+
+            <label for="manualTarget" class="manual-label">Translate to / Traducir a:</label>
+            <select id="manualTarget" class="manual-select">
+                <option value="spanish">Spanish (Español)</option>
+                <option value="english">English</option>
+                <option value="french">French (Français)</option>
+                <option value="hindi">Hindi (हिंदी)</option>
+                <option value="mandarin">Mandarin (中文)</option>
+                <option value="vietnamese">Vietnamese (Tiếng Việt)</option>
+            </select>
+        </div>
+
+        <div id="output" class="output" role="status" aria-live="polite"></div>
+
+        <small class="help">Tip: use short phrases for best results. Tap the button or press Enter. (Consejo: use frases cortas para mejores resultados. Pulse el botón o presione Enter.)</small>
+    </div>
+        <!-- Modal and dropdowns removed: auto-detecting language as you type -->
+    <script src="script-client.js"></script>
+</body>
+</html>
