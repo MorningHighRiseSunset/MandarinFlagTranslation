@@ -13,18 +13,6 @@ const i18n = {
         manualTargetLabel: "Translate to:",
         autoOption: "Auto-detect"
     },
-    zh: {
-        placeholder: "输入一个单词或短语...",
-        button: "翻译",
-        help: "提示：使用简短的短语以获得最佳效果",
-        errorServer: "无法连接到翻译服务器。请检查其是否在运行。",
-        detectedPrefix: "检测到:",
-        translatingTo: "翻译到:",
-        manualMode: "手动模式",
-        manualSourceLabel: "我说：",
-        manualTargetLabel: "翻译到：",
-        autoOption: "自动检测"
-    },
     es: {
         placeholder: "Escriba una palabra o frase...",
         button: "Traducir",
@@ -55,6 +43,89 @@ const manualOptions = [
 
 let detectTimer = null;
 const DEBOUNCE_MS = 1500; // Increased from 600ms to avoid interrupting the user mid-word
+
+// Voice recognition (Web Speech API) helpers
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+let recognition = null;
+let isRecognizing = false;
+
+function initRecognition() {
+    if (!SpeechRecognition) return null;
+    try {
+        recognition = new SpeechRecognition();
+        recognition.lang = (document.documentElement.lang || 'es');
+        recognition.interimResults = true;
+        recognition.continuous = false;
+        recognition.maxAlternatives = 1;
+
+        recognition.onstart = () => {
+            isRecognizing = true;
+            updateMicButton(true);
+        };
+        recognition.onend = () => {
+            isRecognizing = false;
+            updateMicButton(false);
+        };
+        recognition.onerror = (ev) => {
+            console.warn('Speech recognition error', ev);
+            isRecognizing = false;
+            updateMicButton(false);
+        };
+        recognition.onresult = (ev) => {
+            if (!ev.results || ev.results.length === 0) return;
+            // Combine interim/final transcripts
+            let interim = '';
+            let final = '';
+            for (let i = 0; i < ev.results.length; i++) {
+                const res = ev.results[i];
+                if (res.isFinal) final += res[0].transcript;
+                else interim += res[0].transcript;
+            }
+            const inputEl = document.getElementById('input');
+            if (inputEl) {
+                inputEl.value = (final || interim).trim();
+            }
+            if (final && final.trim()) {
+                // Final result — trigger translation
+                setTimeout(() => startTranslate(), 150);
+            }
+        };
+        return recognition;
+    } catch (e) {
+        console.warn('Voice init failed', e);
+        recognition = null;
+        return null;
+    }
+}
+
+function startRecognition() {
+    if (!SpeechRecognition) return;
+    if (!recognition) initRecognition();
+    try {
+        recognition.start();
+    } catch (e) {
+        console.warn('recognition start error', e);
+    }
+}
+
+function stopRecognition() {
+    if (recognition && isRecognizing) {
+        try { recognition.stop(); } catch (e) { console.warn(e); }
+    }
+}
+
+function toggleRecognition() {
+    if (!SpeechRecognition) return;
+    if (isRecognizing) stopRecognition(); else startRecognition();
+}
+
+function updateMicButton(listening) {
+    const btn = document.getElementById('micBtn');
+    if (!btn) return;
+    btn.setAttribute('aria-pressed', listening ? 'true' : 'false');
+    btn.title = listening ? 'Listening... (Escuchando...)' : 'Use voice input (Usar entrada de voz)';
+    btn.style.background = listening ? 'rgba(0,102,204,0.12)' : '';
+}
 
 function setBusy(busy) {
   const input = document.getElementById('input');
@@ -89,6 +160,42 @@ function typeOutputAnimated(el, text) {
             span.classList.add('pop-in');
         }, index * 28);
     });
+    // Speak the result text after animation
+    speakText(text);
+}
+
+function speakText(text) {
+    // Use browser's Web Speech Synthesis API
+    if (!text || !window.speechSynthesis) return;
+    
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    // Try to detect target language for appropriate voice
+    const manualToggle = document.getElementById('manualToggle');
+    const manualTarget = document.getElementById('manualTarget');
+    let targetLang = 'es'; // default to Spanish
+    
+    if (manualToggle && manualToggle.checked && manualTarget) {
+        const targetValue = manualTarget.value;
+        // Map manual keys to language codes
+        const langMap = {
+            'english': 'en',
+            'spanish': 'es',
+            'french': 'fr',
+            'hindi': 'hi',
+            'mandarin': 'zh',
+            'vietnamese': 'vi'
+        };
+        targetLang = langMap[targetValue] || 'es';
+    }
+    
+    utterance.lang = targetLang;
+    utterance.rate = 0.9; // Slightly slower for clarity
+    
+    window.speechSynthesis.speak(utterance);
 }
 
 function localizeUI() {
@@ -245,5 +352,26 @@ document.addEventListener('DOMContentLoaded', function() {
             startTranslate();
         });
     }
+
+        // Microphone button (voice input)
+        const micBtn = document.getElementById('micBtn');
+        if (micBtn) {
+            // Disable mic if API not supported
+            if (!SpeechRecognition) {
+                micBtn.disabled = true;
+                micBtn.title = 'Voice not supported in this browser (Voz no soportada)';
+            } else {
+                micBtn.addEventListener('click', function() {
+                    toggleRecognition();
+                });
+                // Allow Enter/Space to activate
+                micBtn.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        toggleRecognition();
+                    }
+                });
+            }
+        }
 
 });

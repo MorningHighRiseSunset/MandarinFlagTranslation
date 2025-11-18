@@ -2,6 +2,12 @@
 // This file was migrated from the local server implementation so behavior is consistent
 
 const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
+// Allow per-site default target via Netlify env var `SITE_MAIN_TARGET` (e.g. 'fr', 'zh', 'hi', 'en')
+const SITE_MAIN_TARGET_RAW = process.env.SITE_MAIN_TARGET || null;
+let SITE_MAIN_TARGET = null;
+if (SITE_MAIN_TARGET_RAW) {
+  SITE_MAIN_TARGET = mapLanguageNameToCode ? mapLanguageNameToCode(SITE_MAIN_TARGET_RAW) : (String(SITE_MAIN_TARGET_RAW).trim().toLowerCase());
+}
 // Safe debug: log presence of the API key (masked) so we can tell if Netlify injected it
 try {
   if (GOOGLE_API_KEY) {
@@ -209,7 +215,8 @@ exports.handler = async function(event) {
       sourceCode = mapLanguageNameToCode(userSource);
       if (!sourceCode) console.log('Could not map source language:', userSource);
     }
-    let targetCode = 'es'; // default to Spanish (client will set explicit language pair)
+    // default target: prefer SITE_MAIN_TARGET (set per Netlify site), otherwise fall back to Spanish
+    let targetCode = SITE_MAIN_TARGET || 'es';
      if (userTarget) {
        const mapped = mapLanguageNameToCode(userTarget);
        if (mapped) {
