@@ -175,12 +175,14 @@ function typeOutputAnimated(el, text) {
 // Speak text with an explicit short code (e.g. 'en', 'es', 'zh')
 function speakText(text, langCode) {
     if (!text || !window.speechSynthesis) return;
+    console.log('speakText called', { text: text.slice(0, 50), langCode, mappedLang: codeToSpeechLang[langCode] });
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = codeToSpeechLang[langCode] || (langCode || 'zh-CN');
     utterance.rate = 0.95;
     utterance.pitch = 1;
     utterance.volume = 1;
+    console.log('Speaking with lang:', utterance.lang);
     window.speechSynthesis.speak(utterance);
 }
 
@@ -282,6 +284,7 @@ async function startTranslate() {
                 effectiveTarget = map[manualTargetEl.value] || null;
             }
             lastTranslation = { text: result, langCode: effectiveTarget || 'zh' };
+            console.log('Translation complete, stored lastTranslation:', { text: result.slice(0, 50), langCode: lastTranslation.langCode, usedTarget, effectiveTarget });
             const playBtn = document.getElementById('playBtn');
             if (playBtn) playBtn.style.display = 'inline-block';
 
@@ -399,9 +402,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (playBtn) {
         playBtn.addEventListener('click', async function(e) {
             e.preventDefault();
+            console.log('Play button clicked', { lastTranslation });
             await unlockAudioOnGesture();
             if (lastTranslation.text && lastTranslation.langCode) {
+                console.log('Playing translation', { text: lastTranslation.text.slice(0, 50), langCode: lastTranslation.langCode });
                 speakText(lastTranslation.text, lastTranslation.langCode);
+            } else {
+                console.log('No translation to play', { lastTranslation });
             }
         });
     }
