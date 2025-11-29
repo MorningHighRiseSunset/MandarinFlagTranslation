@@ -351,20 +351,36 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hide manual controls initially
     if (manualControls) manualControls.style.display = 'none';
 
-    // Submit handler
+    // Block form submission and Enter key on input — translation ONLY on button click
     if (form) {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
-            await startTranslate();
+            // Form submit is blocked; only button click triggers translation
         });
     }
 
-    // Debounced input (detection only, no translation)
+    // Input: clear output on typing, block Enter key
     if (input) {
         input.addEventListener('input', function() {
             if (output && output.textContent.trim()) clearOutputAnimated(output);
             // User is typing — clear any previous results but don't auto-translate
-            // Translation only happens on Translate button click or form submit
+            // Translation only happens on Translate button click
+        });
+        // Block Enter key to prevent form submission
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === 'Return') {
+                e.preventDefault();
+            }
+        });
+    }
+
+    // Translate button: explicit click handler ONLY
+    const translateBtn = document.getElementById('translateBtn');
+    if (translateBtn) {
+        translateBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            await unlockAudioOnGesture();
+            await startTranslate();
         });
     }
 

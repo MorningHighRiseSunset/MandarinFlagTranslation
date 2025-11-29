@@ -242,6 +242,13 @@ exports.handler = async function(event) {
               // Portuguese is unlikely on a Mandarin site, assume it is Mandarin
               console.log('Portuguese detection (likely Mandarin misdetect)', { confidence: detected.confidence, text: text.slice(0, 50), assuming: 'Mandarin' });
               detectedLang = 'zh';
+            } else if (detectedLang === 'vi') {
+              // Vietnamese is often misdetected for Mandarin (pinyin with accents)
+              // Only trust high-confidence Vietnamese (>= 0.6) on a Mandarin site
+              if (detected.confidence < 0.6) {
+                console.log('Low-confidence Vietnamese detection (likely Mandarin pinyin)', { confidence: detected.confidence, text: text.slice(0, 50), assuming: 'Mandarin' });
+                detectedLang = 'zh';
+              }
             }
             sourceCode = detectedLang;
             console.log('Detected source language:', sourceCode, { confidence: detected.confidence });
