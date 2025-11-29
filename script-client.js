@@ -44,6 +44,32 @@ const manualOptions = [
 let detectTimer = null;
 const DEBOUNCE_MS = 1500; // Increased from 600ms to avoid interrupting the user mid-word
 
+// Simplified pinyin mapping for common Mandarin characters (for TTS fallback on iOS)
+const mandarinToPinyin = {
+    '虐': 'nüè', '待': 'dài', '虐待': 'nüè dài',
+    '爱': 'ài', '好': 'hǎo', '谢': 'xiè', '你': 'nǐ', '我': 'wǒ', '他': 'tā', '她': 'tā',
+    '是': 'shì', '有': 'yǒu', '很': 'hěn', '吗': 'ma', '的': 'de', '在': 'zài', '了': 'le',
+    '可以': 'kěyǐ', '谢谢': 'xièxiè', '对不起': 'duìbùqǐ', '没关系': 'méi guānxi',
+    '早上好': 'zǎoshang hǎo', '晚安': 'wǎn ān', '再见': 'zàijiàn', '不好意思': 'búhǎo yìsi'
+};
+
+// Convert Mandarin text to pinyin for TTS (iOS fallback)
+function mandarinToPinyinStr(text) {
+    // First try exact phrase match
+    if (mandarinToPinyin[text]) return mandarinToPinyin[text];
+    
+    // Character-by-character fallback
+    let result = [];
+    for (let char of text) {
+        if (mandarinToPinyin[char]) {
+            result.push(mandarinToPinyin[char]);
+        } else {
+            result.push(char); // keep unmapped chars as-is
+        }
+    }
+    return result.join(' ');
+}
+
 // Speech language mapping and last translation storage (manual play)
 const codeToSpeechLang = {
     en: 'en-US',
@@ -175,14 +201,19 @@ function typeOutputAnimated(el, text) {
 // Speak text with an explicit short code (e.g. 'en', 'es', 'zh')
 function speakText(text, langCode) {
     if (!text || !window.speechSynthesis) return;
-    console.log('speakText called', { text: text.slice(0, 50), langCode, mappedLang: codeToSpeechLang[langCode] });
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = codeToSpeechLang[langCode] || (langCode || 'zh-CN');
+    
+    // For Mandarin on iOS/Safari, use pinyin romanization instead of characters
+    let textToSpeak = text;
+    if (langCode === 'zh') {
+        textToSpeak = mandarinToPinyinStr(text);
+    }
+    
+    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = langCode === 'zh' ? 'en-US' : (codeToSpeechLang[langCode] || (langCode || 'zh-CN'));
     utterance.rate = 0.95;
     utterance.pitch = 1;
     utterance.volume = 1;
-    console.log('Speaking with lang:', utterance.lang);
     window.speechSynthesis.speak(utterance);
 }
 
@@ -284,7 +315,6 @@ async function startTranslate() {
                 effectiveTarget = map[manualTargetEl.value] || null;
             }
             lastTranslation = { text: result, langCode: effectiveTarget || 'zh' };
-            console.log('Translation complete, stored lastTranslation:', { text: result.slice(0, 50), langCode: lastTranslation.langCode, usedTarget, effectiveTarget });
             const playBtn = document.getElementById('playBtn');
             if (playBtn) playBtn.style.display = 'inline-block';
 
@@ -354,36 +384,20 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hide manual controls initially
     if (manualControls) manualControls.style.display = 'none';
 
-    // Block form submission and Enter key on input — translation ONLY on button click
+    // Submit handler
     if (form) {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
-            // Form submit is blocked; only button click triggers translation
+            await startTranslate();
         });
     }
 
-    // Input: clear output on typing, block Enter key
+    // Debounced input
     if (input) {
         input.addEventListener('input', function() {
             if (output && output.textContent.trim()) clearOutputAnimated(output);
-            // User is typing — clear any previous results but don't auto-translate
-            // Translation only happens on Translate button click
-        });
-        // Block Enter key to prevent form submission
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === 'Return') {
-                e.preventDefault();
-            }
-        });
-    }
-
-    // Translate button: explicit click handler ONLY
-    const translateBtn = document.getElementById('translateBtn');
-    if (translateBtn) {
-        translateBtn.addEventListener('click', async function(e) {
-            e.preventDefault();
-            await unlockAudioOnGesture();
-            await startTranslate();
+            if (detectTimer) clearTimeout(detectTimer);
+            detectTimer = setTimeout(() => startTranslate(), DEBOUNCE_MS);
         });
     }
 
@@ -402,13 +416,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (playBtn) {
         playBtn.addEventListener('click', async function(e) {
             e.preventDefault();
-            console.log('Play button clicked', { lastTranslation });
             await unlockAudioOnGesture();
             if (lastTranslation.text && lastTranslation.langCode) {
-                console.log('Playing translation', { text: lastTranslation.text.slice(0, 50), langCode: lastTranslation.langCode });
                 speakText(lastTranslation.text, lastTranslation.langCode);
-            } else {
-                console.log('No translation to play', { lastTranslation });
             }
         });
     }
