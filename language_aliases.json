@@ -1,0 +1,15 @@
+{
+  "english": ["english", "en", "anglais"],
+  "spanish": ["spanish", "es", "espanol", "español", "espagnol"],
+  "french": ["french", "fr", "francais", "français"],
+  "hindi": ["hindi", "hi"],
+  "mandarin": ["mandarin", "chinese", "zh", "ch", "中文", "漢語"],
+  "vietnamese": ["vietnamese", "vi"],
+  "portuguese": ["portuguese", "pt", "português"],
+  "german": ["german", "de", "deutsch"],
+  "italian": ["italian", "it", "italiano"],
+  "arabic": ["arabic", "ar", "العربية"],
+  "japanese": ["japanese", "ja", "日本語"],
+  "korean": ["korean", "ko", "한국어"],
+  "russian": ["russian", "ru", "русский"]
+}
