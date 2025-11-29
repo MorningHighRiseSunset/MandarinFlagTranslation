@@ -249,6 +249,13 @@ exports.handler = async function(event) {
                 console.log('Low-confidence Vietnamese detection (likely Mandarin pinyin)', { confidence: detected.confidence, text: text.slice(0, 50), assuming: 'Mandarin' });
                 detectedLang = 'zh';
               }
+            } else if (detectedLang === 'ja') {
+              // Japanese and Mandarin share CJK characters; Google often misdetects Mandarin as Japanese
+              // Only trust high-confidence Japanese (>= 0.8) on a Mandarin site; otherwise assume Mandarin
+              if (detected.confidence < 0.8) {
+                console.log('Low-confidence Japanese detection (likely Mandarin characters)', { confidence: detected.confidence, text: text.slice(0, 50), assuming: 'Mandarin' });
+                detectedLang = 'zh';
+              }
             }
             sourceCode = detectedLang;
             console.log('Detected source language:', sourceCode, { confidence: detected.confidence });
