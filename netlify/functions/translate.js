@@ -211,7 +211,7 @@ exports.handler = async function(event) {
       sourceCode = mapLanguageNameToCode(userSource);
       if (!sourceCode) console.log('Could not map source language:', userSource);
     }
-    let targetCode = 'es'; // default to Spanish (client will set explicit language pair)
+    let targetCode = 'zh'; // default to Mandarin for this site
      if (userTarget) {
        const mapped = mapLanguageNameToCode(userTarget);
        if (mapped) {
@@ -233,24 +233,23 @@ exports.handler = async function(event) {
           const detected = await callGoogleDetect(text);
           if (detected) {
             let detectedLang = detected.language;
-            // Spanish flag site: Spanish/Portuguese share many words and get misdetected.
-            // Treat low-confidence English, Portuguese, and other ambiguous detections as Spanish.
-            // Only trust high-confidence English (>= 0.7) on a Spanish site.
+            // Mandarin flag site: treat ambiguous detections sensibly.
+            // Only trust high-confidence English (>= 0.7) on a Mandarin site.
             if (detectedLang === 'en' && detected.confidence < 0.7) {
-              console.log('Low-confidence English detection', { confidence: detected.confidence, text: text.slice(0, 50), assuming: 'Spanish' });
-              detectedLang = 'es';
+              console.log('Low-confidence English detection', { confidence: detected.confidence, text: text.slice(0, 50), assuming: 'Mandarin' });
+              detectedLang = 'zh';
             } else if (detectedLang === 'pt') {
-              // Portuguese is almost always a misdetection of Spanish on this site
-              console.log('Portuguese detection (likely Spanish misdetect)', { confidence: detected.confidence, text: text.slice(0, 50), assuming: 'Spanish' });
-              detectedLang = 'es';
+              // Portuguese is unlikely on a Mandarin site, assume it is Mandarin
+              console.log('Portuguese detection (likely Mandarin misdetect)', { confidence: detected.confidence, text: text.slice(0, 50), assuming: 'Mandarin' });
+              detectedLang = 'zh';
             }
             sourceCode = detectedLang;
             console.log('Detected source language:', sourceCode, { confidence: detected.confidence });
             // Auto-map detected source to a sensible target if user didn't supply one
-            // For Spanish flag site: Spanish → English; other languages → Spanish
+            // For Mandarin flag site: Mandarin → English; other languages → Mandarin
             if (!userTarget) {
-              if (sourceCode === 'es') targetCode = 'en';
-              else if (['fr', 'hi', 'zh', 'vi'].includes(sourceCode)) targetCode = 'es';
+              if (sourceCode === 'zh') targetCode = 'en';
+              else if (['en', 'es', 'fr', 'hi', 'vi'].includes(sourceCode)) targetCode = 'zh';
             }
             detectedSource = sourceCode;
             usedTarget = targetCode;

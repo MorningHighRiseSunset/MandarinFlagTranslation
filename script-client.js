@@ -359,12 +359,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Debounced input
+    // Debounced input (detection only, no translation)
     if (input) {
         input.addEventListener('input', function() {
             if (output && output.textContent.trim()) clearOutputAnimated(output);
-            if (detectTimer) clearTimeout(detectTimer);
-            detectTimer = setTimeout(() => startTranslate(), DEBOUNCE_MS);
+            // User is typing — clear any previous results but don't auto-translate
+            // Translation only happens on Translate button click or form submit
         });
     }
 
