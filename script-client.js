@@ -64,10 +64,11 @@ function mandarinToPinyinStr(text) {
         if (mandarinToPinyin[char]) {
             result.push(mandarinToPinyin[char]);
         } else {
-            result.push(char); // keep unmapped chars as-is
+            // For unmapped chars, just skip (they're likely not pronounceable anyway)
+            // result.push(char); 
         }
     }
-    return result.join(' ');
+    return result.length > 0 ? result.join(' ') : text;
 }
 
 // Speech language mapping and last translation storage (manual play)
@@ -205,12 +206,15 @@ function speakText(text, langCode) {
     
     // For Mandarin on iOS/Safari, use pinyin romanization instead of characters
     let textToSpeak = text;
+    let speakLang = codeToSpeechLang[langCode] || (langCode || 'zh-CN');
+    
     if (langCode === 'zh') {
         textToSpeak = mandarinToPinyinStr(text);
+        speakLang = 'en-US'; // Speak pinyin as English
     }
     
     const utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.lang = langCode === 'zh' ? 'en-US' : (codeToSpeechLang[langCode] || (langCode || 'zh-CN'));
+    utterance.lang = speakLang;
     utterance.rate = 0.95;
     utterance.pitch = 1;
     utterance.volume = 1;
