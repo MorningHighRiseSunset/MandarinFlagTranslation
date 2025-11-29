@@ -388,20 +388,26 @@ document.addEventListener('DOMContentLoaded', function() {
     // Hide manual controls initially
     if (manualControls) manualControls.style.display = 'none';
 
-    // Submit handler
+    // Block form submission completely — translation ONLY on button click
     if (form) {
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
-            await startTranslate();
+            // Do nothing — form submit is blocked
         });
     }
 
-    // Debounced input
+    // Input: clear output on typing, block Enter key, NO auto-translate
     if (input) {
         input.addEventListener('input', function() {
             if (output && output.textContent.trim()) clearOutputAnimated(output);
-            if (detectTimer) clearTimeout(detectTimer);
-            detectTimer = setTimeout(() => startTranslate(), DEBOUNCE_MS);
+            // User is typing — clear any previous results but DON'T auto-translate
+        });
+        // Block Enter and Return keys completely
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === 'Return') {
+                e.preventDefault();
+                e.stopPropagation();
+            }
         });
     }
 
@@ -410,8 +416,7 @@ document.addEventListener('DOMContentLoaded', function() {
         manualToggle.addEventListener('change', function() {
             const manualOn = manualToggle.checked;
             if (manualControls) manualControls.style.display = manualOn ? 'flex' : 'none';
-            // re-run translate to respect manual mode change
-            startTranslate();
+            // Don't auto-translate on toggle change
         });
     }
 
@@ -424,6 +429,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (lastTranslation.text && lastTranslation.langCode) {
                 speakText(lastTranslation.text, lastTranslation.langCode);
             }
+        });
+    }
+
+    // Translate button: explicit click handler — ONLY way to trigger translation
+    const translateBtn = document.getElementById('translateBtn');
+    if (translateBtn) {
+        translateBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            await startTranslate();
         });
     }
 

@@ -233,6 +233,10 @@ exports.handler = async function(event) {
           const detected = await callGoogleDetect(text);
           if (detected) {
             let detectedLang = detected.language;
+            // Normalize language codes (e.g., 'zh-CN' or 'zh-TW' -> 'zh')
+            if (detectedLang && detectedLang.includes('-')) {
+              detectedLang = detectedLang.split('-')[0];
+            }
             // Mandarin flag site: treat ambiguous detections sensibly.
             // Only trust high-confidence English (>= 0.7) on a Mandarin site.
             if (detectedLang === 'en' && detected.confidence < 0.7) {
