@@ -50,7 +50,7 @@
   async function speakWithServerTTS(text) {
     if (!text) return false;
     try {
-      const url = '/api/tts?text=' + encodeURIComponent(text);
+      const url = '/.netlify/functions/tts?text=' + encodeURIComponent(text);
       const resp = await fetch(url, { method: 'GET' });
       if (!resp.ok) {
         err('Server TTS fetch failed', resp.status, resp.statusText);
