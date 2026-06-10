@@ -203,7 +203,7 @@ module.exports = async function handler(req, res) {
       englishText = String(text);
     }
 
-  // Multi-language patterns: English, Spanish, French
+  // Multi-language patterns: English, Spanish, French, Mandarin
   // These patterns capture two groups: (1) phrase to translate, (2) language name
   const patterns = [
       // English patterns
@@ -220,7 +220,14 @@ module.exports = async function handler(req, res) {
   /¿?\s*qué\s+quiere\s+decir\s+(.+?)\s*\??/i,
       // French patterns: Comment dit-on X en Y?
       /comment\s+(?:dit|on\s+dit)\s+(.+?)\s+en\s+([a-zA-Zàâäéèêëîïôöùûüœæç\s]+)/i,
-      /qu'est-ce\s+que\s+c'est\s+(.+?)\s+en\s+([a-zA-Zàâäéèêëîïôöùûüœæç\s]+)/i
+      /qu'est-ce\s+que\s+c'est\s+(.+?)\s+in\s+([a-zA-Zàâäéèêëîïôöùûüœæç\s]+)/i,
+      // Mandarin patterns: 这个用英语怎么说, 英语怎么说, etc.
+      /(.+?)用(?:英语|英文|英文|英)\s*怎么说/i,
+      /(.+?)用(?:中文|汉语|中文|汉)\s*怎么说/i,
+      /(?:英语|英文|英)\s*怎么说(.+?)/i,
+      /(?:中文|汉语|中文|汉)\s*怎么说(.+?)/i,
+      /怎么用(?:英语|英文|英)\s*说(.+?)/i,
+      /怎么用(?:中文|汉语|中文|汉)\s*说(.+?)/i
     ];
 
     let match = null;
@@ -234,7 +241,15 @@ module.exports = async function handler(req, res) {
       // If the pattern didn't capture a second group (some patterns may omit it), try heuristics
       const maybeLang = (match[2] || '').trim();
       let extractedTargetCode = null;
-      if (maybeLang) {
+      
+      // For Mandarin patterns, the target language is embedded in the pattern itself
+      // Check if the matched pattern contains language keywords
+      const matchedPattern = match.input || text || englishText;
+      if (/用(?:英语|英文|英)\s*怎么说|怎么用(?:英语|英文|英)\s*说|(?:英语|英文|英)\s*怎么说/.test(matchedPattern)) {
+        extractedTargetCode = 'en'; // English
+      } else if (/用(?:中文|汉语|汉)\s*怎么说|怎么用(?:中文|汉语|汉)\s*说|(?:中文|汉语|汉)\s*怎么说/.test(matchedPattern)) {
+        extractedTargetCode = 'zh'; // Mandarin
+      } else if (maybeLang) {
         extractedTargetCode = resolveLanguageName(maybeLang);
       }
 
@@ -251,12 +266,32 @@ module.exports = async function handler(req, res) {
 
       if (extractedTargetCode) {
         try {
+          // Detect source language from the phrase to translate if not provided
+          let detectedPhraseSource = sourceCode;
+          if (!detectedPhraseSource) {
+            // Simple heuristic: if phrase contains Chinese characters, it's likely Mandarin
+            if (/[\u4e00-\u9fff]/.test(phraseToTranslate)) {
+              detectedPhraseSource = 'zh';
+            } else if (/[a-zA-Z]/.test(phraseToTranslate)) {
+              detectedPhraseSource = 'en';
+            }
+          }
+          
+          // Check for redundant same-language request
+          if (detectedPhraseSource && detectedPhraseSource === extractedTargetCode) {
+            // Return a helpful message instead of redundant translation
+            const redundantMsg = detectedPhraseSource === 'zh' 
+              ? '这句话已经是中文了，不需要翻译。' 
+              : 'This is already in English, no translation needed.';
+            return res.status(200).json({ result: redundantMsg, detectedSource: detectedPhraseSource, targetUsed: extractedTargetCode });
+          }
+          
           // Only call DeepL if we have a valid source code to translate FROM
           // If sourceCode is not available or null, fall through to fallback
-          if (sourceCode && sourceCode !== extractedTargetCode) {
-            const translated = await callDeepLTranslate(phraseToTranslate || text, extractedTargetCode, sourceCode);
+          if (detectedPhraseSource && detectedPhraseSource !== extractedTargetCode) {
+            const translated = await callDeepLTranslate(phraseToTranslate || text, extractedTargetCode, detectedPhraseSource);
             // Return only the translated phrase as the direct answer and include detected/source info
-            return res.status(200).json({ result: translated.translatedText, detectedSource: detectedSource, targetUsed: extractedTargetCode });
+            return res.status(200).json({ result: translated.translatedText, detectedSource: detectedPhraseSource, targetUsed: extractedTargetCode });
           }
         } catch (err) {
           console.log('Pattern-matched translation failed, falling back to full-text translation', { error: String(err).slice(0, 200) });
