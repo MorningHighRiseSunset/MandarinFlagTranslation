@@ -1,29 +1,18 @@
-// Netlify function: enhanced translator with intent parsing and quoted-phrase handling
-// This file was migrated from the local server implementation so behavior is consistent
+// Vercel serverless function: enhanced translator with intent parsing and quoted-phrase handling
+// Using DeepL API
 
-const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
-// Safe debug: log presence of the API key (masked) so we can tell if Netlify injected it
-try {
-  if (GOOGLE_API_KEY) {
-    const masked = `${GOOGLE_API_KEY.slice(0, 6)}...${GOOGLE_API_KEY.slice(-4)}`;
-    console.log('GOOGLE_API_KEY present:', true, 'masked:', masked);
-  } else {
-    console.log('GOOGLE_API_KEY present:', false);
-  }
-} catch (e) {
-  // Defensive: don't let logging errors break the function
-  console.log('Error while logging GOOGLE_API_KEY presence', String(e));
-}
+const DEEPL_API_KEY = process.env.DEEPL_API_KEY;
+const DEEPL_URL = process.env.DEEPL_URL || 'https://api-free.deepl.com/v2/translate';
 const path = require('path');
 
 // Load language aliases shipped with the site (falls back gracefully)
 let languageAliases = {};
 try {
   // try a few likely locations for the shipped language_aliases.json depending on where this file lives
-  // 1) when this file is in netlify/functions -> ../../language_aliases.json
+  // 1) when this file is in api/ -> ../language_aliases.json
   // 2) when this file is in project root -> ./language_aliases.json
   try {
-    languageAliases = require(path.join(__dirname, '..', '..', 'language_aliases.json'));
+    languageAliases = require(path.join(__dirname, '..', 'language_aliases.json'));
   } catch (e1) {
     try {
       languageAliases = require(path.join(__dirname, 'language_aliases.json'));
@@ -127,59 +116,35 @@ function resolveLanguageName(name) {
   return null;
 }
 
-async function callGoogleDetect(q) {
-  const url = `https://translation.googleapis.com/language/translate/v2/detect?key=${GOOGLE_API_KEY}`;
-  const payload = { q: String(q) };
+async function callDeepLTranslate(q, target, source) {
+  const url = DEEPL_URL;
+  const payload = {
+    text: [String(q)],
+    target_lang: target.toUpperCase()
+  };
+  // Only pass source_lang if it's explicitly provided (DeepL auto-detects otherwise)
+  if (source && source !== 'auto' && source !== '') {
+    payload.source_lang = source.toUpperCase();
+  }
+
   const apiRes = await fetch(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Authorization': `DeepL-Auth-Key ${DEEPL_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify(payload)
   });
+
   if (!apiRes.ok) {
-    // Log Google Detect response for debugging (do not log API key)
     let textErr = '';
     try {
       textErr = await apiRes.text();
     } catch (e) {
       textErr = String(e);
     }
-    console.log('Google Detect failed', { status: apiRes.status, body: textErr.slice(0,2000) });
-    const err = new Error('Google detect error');
-    err.status = apiRes.status;
-    err.details = textErr;
-    throw err;
-  }
-  const json = await apiRes.json();
-  if (json && json.data && json.data.detections && json.data.detections[0] && json.data.detections[0][0]) {
-    const detected = json.data.detections[0][0];
-    // Return both language and confidence
-    return { language: detected.language, confidence: detected.confidence || 0, isReliable: detected.isReliable };
-  }
-  throw new Error('Invalid response from Google Detect');
-}
-
-async function callGoogleTranslate(q, target, source) {
-  const url = `https://translation.googleapis.com/language/translate/v2?key=${GOOGLE_API_KEY}`;
-  const payload = { q: String(q), target: target, format: 'text' };
-  if (source) payload.source = source;
-
-
-  const apiRes = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
-  if (!apiRes.ok) {
-    // Log Google Translate response for debugging (trim large bodies)
-    let textErr = '';
-    try {
-      textErr = await apiRes.text();
-    } catch (e) {
-      textErr = String(e);
-    }
-    console.log('Google Translate failed', { status: apiRes.status, body: textErr.slice(0,2000) });
-    const err = new Error('Google API error');
+    console.log('DeepL failed', { status: apiRes.status, body: textErr.slice(0,2000) });
+    const err = new Error('DeepL API error');
     err.status = apiRes.status;
     err.details = textErr;
     throw err;
@@ -187,23 +152,27 @@ async function callGoogleTranslate(q, target, source) {
 
   const json = await apiRes.json();
 
-  if (json && json.data && json.data.translations && json.data.translations[0]) {
-    return json.data.translations[0];
+  if (json && json.translations && json.translations[0]) {
+    return { translatedText: json.translations[0].text };
   }
-  const err = new Error('Invalid response from Google Translate');
+  const err = new Error('Invalid response from DeepL');
   err.raw = json;
   throw err;
 }
 
-exports.handler = async function(event) {
+module.exports = async function handler(req, res) {
   console.log('translate handler invoked');
   try {
-    console.log('Incoming event body (raw):', typeof event.body === 'string' ? event.body.slice(0,1000) : event.body);
-    if (!GOOGLE_API_KEY) return { statusCode: 500, body: JSON.stringify({ error: 'Server: API key not configured' }) };
-    const body = JSON.parse(event.body || '{}');
+    console.log('Incoming request method:', req.method);
+    if (req.method !== 'POST') {
+      return res.status(405).json({ error: 'Method not allowed' });
+    }
+    console.log('Incoming request body (raw):', typeof req.body === 'string' ? req.body.slice(0,1000) : req.body);
+    if (!DEEPL_API_KEY) return res.status(500).json({ error: 'Server: DeepL API key not configured' });
+    const body = req.body || {};
     console.log('Parsed request body:', { text: body.text ? '[REDACTED]' : undefined, source: body.source, target: body.target });
     const { text, source: userSource, target: userTarget } = body || {};
-    if (!text) return { statusCode: 400, body: JSON.stringify({ error: 'Missing `text` in request body' }) };
+    if (!text) return res.status(400).json({ error: 'Missing `text` in request body' });
 
     // Map user language names (from dropdown) to codes (be resilient if mapping fails)
     let sourceCode = null;
@@ -227,62 +196,9 @@ exports.handler = async function(event) {
   let detectedSource = sourceCode || null;
   let usedTarget = targetCode || null;
     try {
-      // If we don't know the source language, try to detect it using Google Detect
-      if (!sourceCode) {
-        try {
-          const detected = await callGoogleDetect(text);
-          if (detected) {
-            let detectedLang = detected.language;
-            // Normalize language codes (e.g., 'zh-CN' or 'zh-TW' -> 'zh')
-            if (detectedLang && detectedLang.includes('-')) {
-              detectedLang = detectedLang.split('-')[0];
-            }
-            // Mandarin flag site: treat ambiguous detections sensibly.
-            // Only trust high-confidence English (>= 0.7) on a Mandarin site.
-            if (detectedLang === 'en' && detected.confidence < 0.7) {
-              console.log('Low-confidence English detection', { confidence: detected.confidence, text: text.slice(0, 50), assuming: 'Mandarin' });
-              detectedLang = 'zh';
-            } else if (detectedLang === 'pt') {
-              // Portuguese is unlikely on a Mandarin site, assume it is Mandarin
-              console.log('Portuguese detection (likely Mandarin misdetect)', { confidence: detected.confidence, text: text.slice(0, 50), assuming: 'Mandarin' });
-              detectedLang = 'zh';
-            } else if (detectedLang === 'vi') {
-              // Vietnamese is often misdetected for Mandarin (pinyin with accents)
-              // Only trust high-confidence Vietnamese (>= 0.6) on a Mandarin site
-              if (detected.confidence < 0.6) {
-                console.log('Low-confidence Vietnamese detection (likely Mandarin pinyin)', { confidence: detected.confidence, text: text.slice(0, 50), assuming: 'Mandarin' });
-                detectedLang = 'zh';
-              }
-            } else if (detectedLang === 'ja') {
-              // Japanese and Mandarin share CJK characters; Google often misdetects Mandarin as Japanese
-              // Only trust high-confidence Japanese (>= 0.8) on a Mandarin site; otherwise assume Mandarin
-              if (detected.confidence < 0.8) {
-                console.log('Low-confidence Japanese detection (likely Mandarin characters)', { confidence: detected.confidence, text: text.slice(0, 50), assuming: 'Mandarin' });
-                detectedLang = 'zh';
-              }
-            }
-            sourceCode = detectedLang;
-            console.log('Detected source language:', sourceCode, { confidence: detected.confidence });
-            // Auto-map detected source to a sensible target if user didn't supply one
-            // For Mandarin flag site: Mandarin → English; other languages → Mandarin
-            if (!userTarget) {
-              if (sourceCode === 'zh') targetCode = 'en';
-              else if (['en', 'es', 'fr', 'hi', 'vi'].includes(sourceCode)) targetCode = 'zh';
-            }
-            detectedSource = sourceCode;
-            usedTarget = targetCode;
-          }
-        } catch (e) {
-          console.log('Language detection failed, continuing without it', String(e));
-        }
-      }
-
-      if (sourceCode && sourceCode !== 'en') {
-        const t = await callGoogleTranslate(text, 'en', sourceCode);
-        englishText = t.translatedText || String(text);
-      } else {
-        englishText = String(text);
-      }
+      // DeepL auto-detects source language, so we skip explicit detection
+      // Just use the text as-is for pattern matching
+      englishText = String(text);
     } catch (err) {
       englishText = String(text);
     }
@@ -314,7 +230,7 @@ exports.handler = async function(event) {
     }
 
     if (match) {
-      const phraseToTranslate = (match[1] || '').trim().replace(/["'«»“”‹›]/g, '');
+      const phraseToTranslate = (match[1] || '').trim().replace(/["'«»""‹›]/g, '');
       // If the pattern didn't capture a second group (some patterns may omit it), try heuristics
       const maybeLang = (match[2] || '').trim();
       let extractedTargetCode = null;
@@ -335,15 +251,12 @@ exports.handler = async function(event) {
 
       if (extractedTargetCode) {
         try {
-          // Only call Google Translate if we have a valid source code to translate FROM
+          // Only call DeepL if we have a valid source code to translate FROM
           // If sourceCode is not available or null, fall through to fallback
           if (sourceCode && sourceCode !== extractedTargetCode) {
-            const translated = await callGoogleTranslate(phraseToTranslate || text, extractedTargetCode, sourceCode);
+            const translated = await callDeepLTranslate(phraseToTranslate || text, extractedTargetCode, sourceCode);
             // Return only the translated phrase as the direct answer and include detected/source info
-            return {
-              statusCode: 200,
-              body: JSON.stringify({ result: translated.translatedText, detectedSource: detectedSource, targetUsed: extractedTargetCode })
-            };
+            return res.status(200).json({ result: translated.translatedText, detectedSource: detectedSource, targetUsed: extractedTargetCode });
           }
         } catch (err) {
           console.log('Pattern-matched translation failed, falling back to full-text translation', { error: String(err).slice(0, 200) });
@@ -355,19 +268,16 @@ exports.handler = async function(event) {
 
     // Fallback: translate from source to target language using user's preference
     try {
-      console.log('Calling Google Translate for fallback', { text: text.slice(0,200), targetCode, sourceCode });
-      const translated = await callGoogleTranslate(text, targetCode, sourceCode);
-      return {
-        statusCode: 200,
-        body: JSON.stringify({ result: translated.translatedText, detectedSource: detectedSource, targetUsed: targetCode })
-      };
+      console.log('Calling DeepL for fallback', { text: text.slice(0,200), targetCode, sourceCode });
+      const translated = await callDeepLTranslate(text, targetCode, sourceCode);
+      return res.status(200).json({ result: translated.translatedText, detectedSource: detectedSource, targetUsed: targetCode });
     } catch (err) {
-      return { statusCode: 502, body: JSON.stringify({ error: 'Translation provider error', details: err.details || String(err) }) };
+      return res.status(502).json({ error: 'Translation provider error', details: err.details || String(err) });
     }
 
   } catch (err) {
     console.error('Unhandled error in translate handler:', err);
     const errorDetails = err && err.stack ? err.stack : String(err);
-    return { statusCode: 500, body: JSON.stringify({ error: 'Server error', details: errorDetails }) };
+    return res.status(500).json({ error: 'Server error', details: errorDetails });
   }
 };

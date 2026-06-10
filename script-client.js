@@ -293,7 +293,7 @@ async function startTranslate() {
             if (manualTarget && manualTarget.value) payload.target = manualTarget.value;
         }
 
-        const response = await fetch('/.netlify/functions/translate', {
+        const response = await fetch('/api/translate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)

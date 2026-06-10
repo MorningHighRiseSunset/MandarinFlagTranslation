@@ -1,1 +1,1 @@
-Mandarin Translation Assistant - deploy to Netlify. Add GOOGLE_API_KEY in Netlify site settings.
+Mandarin Translation Assistant - deploy to Vercel. Add DEEPL_API_KEY in Vercel environment variables.
