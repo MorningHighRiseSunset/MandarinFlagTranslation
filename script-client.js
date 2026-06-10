@@ -200,8 +200,16 @@ function typeOutputAnimated(el, text) {
     });
 }
 // Speak text with an explicit short code (e.g. 'en', 'es', 'zh')
-function speakText(text, langCode) {
-    if (!text || !window.speechSynthesis) return;
+async function speakText(text, langCode) {
+    if (!text) return;
+    
+    // For Mandarin, use the dedicated Mandarin TTS handler
+    if (langCode === 'zh' && window.MandarinTTS && window.MandarinTTS.playMandarinText) {
+        await window.MandarinTTS.playMandarinText(text);
+        return;
+    }
+    
+    if (!window.speechSynthesis) return;
     window.speechSynthesis.cancel();
     
     // For Mandarin on iOS/Safari, use pinyin romanization instead of characters
@@ -427,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             await unlockAudioOnGesture();
             if (lastTranslation.text && lastTranslation.langCode) {
-                speakText(lastTranslation.text, lastTranslation.langCode);
+                await speakText(lastTranslation.text, lastTranslation.langCode);
             }
         });
     }
