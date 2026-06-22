@@ -129,7 +129,7 @@ function renderAlphabetWithAudio(output, text) {
                 // Speaker button
                 const speakerBtn = document.createElement('button');
                 speakerBtn.innerHTML = '🔊';
-                speakerBtn.style.cssText = 'background: #4CAF50; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;';
+                speakerBtn.style.cssText = 'background: #1976D2; color: white; border: none; border-radius: 8px; padding: 8px 12px; cursor: pointer; font-size: 16px;';
                 speakerBtn.onclick = () => playPinyinAudio(pinyin);
                 
                 row.appendChild(letterSpan);
