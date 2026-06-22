@@ -203,6 +203,49 @@ module.exports = async function handler(req, res) {
       englishText = String(text);
     }
 
+  // Check for alphabet listing requests first
+  const alphabetPatterns = [
+    // English patterns
+    /(?:show\s+me\s+the\s+)?(?:mandarin|chinese)\s+alphabet/i,
+    /(?:show\s+me\s+the\s+)?(?:mandarin|chinese)\s+pinyin/i,
+    /list\s+(?:the\s+)?(?:mandarin|chinese)\s+alphabet/i,
+    /list\s+(?:the\s+)?(?:mandarin|chinese)\s+pinyin/i,
+    /what\s+(?:is|'s)\s+the\s+(?:mandarin|chinese)\s+alphabet/i,
+    /what\s+(?:is|'s)\s+the\s+(?:mandarin|chinese)\s+pinyin/i,
+    // Mandarin patterns
+    /(?:中|中文|汉语)\s*字母/i,
+    /(?:中|中文|汉语)\s*拼音/i,
+    /列出\s*(?:中|中文|汉语)\s*字母/i,
+    /列出\s*(?:中|中文|汉语)\s*拼音/i,
+    /(?:中|中文|汉语)\s*字母表/i
+  ];
+
+  for (const p of alphabetPatterns) {
+    if (p.test(text) || p.test(englishText)) {
+      // Return Mandarin Pinyin alphabet
+      const mandarinAlphabet = `Mandarin Pinyin Alphabet (汉语拼音字母表):
+
+Initials (声母):
+b p m f d t n l g k h j q x zh ch sh r z c s
+y w
+
+Finals (韵母):
+a o e i u ü
+ai ei ui ao ou iu
+ie üe er
+an en in un ün
+ang eng ing ong
+
+Tones (声调):
+1: ā ē ī ō ū ǖ (high level)
+2: á é í ó ú ǘ (rising)
+3: ǎ ě ǐ ǒ ǔ ǚ (falling-rising)
+4: à è ì ò ù ǜ (falling)
+5: a e i o u ü (neutral)`;
+      return res.status(200).json({ result: mandarinAlphabet, detectedSource: 'en', targetUsed: 'zh' });
+    }
+  }
+
   // Multi-language patterns: English, Spanish, French, Mandarin
   // These patterns capture two groups: (1) phrase to translate, (2) language name
   const patterns = [
