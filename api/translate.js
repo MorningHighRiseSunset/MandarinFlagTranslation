@@ -222,26 +222,106 @@ module.exports = async function handler(req, res) {
 
   for (const p of alphabetPatterns) {
     if (p.test(text) || p.test(englishText)) {
-      // Return Mandarin Pinyin alphabet
-      const mandarinAlphabet = `Mandarin Pinyin Alphabet (汉语拼音字母表):
+      // Return comprehensive Mandarin Pinyin alphabet with Chinese character examples
+      const mandarinAlphabet = `Mandarin Pinyin Alphabet (汉语拼音字母表) with Examples:
 
-Initials (声母):
-b p m f d t n l g k h j q x zh ch sh r z c s
-y w
+═══════════════════════════════════════════════════════════════
 
-Finals (韵母):
-a o e i u ü
-ai ei ui ao ou iu
-ie üe er
-an en in un ün
-ang eng ing ong
+INITIALS (声母) - 21 sounds:
 
-Tones (声调):
-1: ā ē ī ō ū ǖ (high level)
-2: á é í ó ú ǘ (rising)
-3: ǎ ě ǐ ǒ ǔ ǚ (falling-rising)
-4: à è ì ò ù ǜ (falling)
-5: a e i o u ü (neutral)`;
+b: 八 (bā - eight), 爸 (bà - dad), 不 (bù - no/not)
+p: 怕 (pà - afraid), 跑 (pǎo - run), 朋 (péng - friend)
+m: 妈 (mā - mom), 门 (mén - door), 明 (míng - bright)
+f: 飞 (fēi - fly), 饭 (fàn - rice/meal), 父 (fù - father)
+
+d: 大 (dà - big), 的 (de - possessive), 弟 (dì - younger brother)
+t: 他 (tā - he/him), 天 (tiān - sky/day), 太 (tài - too/very)
+n: 你 (nǐ - you), 南 (nán - south), 能 (néng - can)
+l: 来 (lái - come), 老 (lǎo - old), 了 (le - particle)
+
+g: 个 (gè - classifier), 高 (gāo - high), 给 (gěi - give)
+k: 看 (kàn - look/see), 开 (kāi - open), 可 (kě - can)
+h: 好 (hǎo - good), 会 (huì - can/will), 后 (hòu - after/behind)
+
+j: 家 (jiā - home/family), 叫 (jiào - call), 九 (jiǔ - nine)
+q: 去 (qù - go), 七 (qī - seven), 起 (qǐ - rise/start)
+x: 小 (xiǎo - small), 西 (xī - west), 想 (xiǎng - think/want)
+
+zh: 中 (zhōng - middle/China), 知 (zhī - know), 找 (zhǎo - find)
+ch: 吃 (chī - eat), 车 (chē - car), 长 (cháng - long)
+sh: 是 (shì - is/yes), 水 (shuǐ - water), 书 (shū - book)
+r: 人 (rén - person), 日 (rì - sun/day), 热 (rè - hot)
+
+z: 在 (zài - at/in), 做 (zuò - do/make), 子 (zi - child/son)
+c: 才 (cái - just/only), 吃 (chī - eat), 从 (cóng - from)
+s: 三 (sān - three), 四 (sì - four), 是 (shì - is)
+
+y: 一 (yī - one), 有 (yǒu - have), 要 (yào - want)
+w: 我 (wǒ - I/me), 五 (wǔ - five), 晚 (wǎn - late/night)
+
+═══════════════════════════════════════════════════════════════
+
+FINALS (韵母) - 35+ sounds:
+
+Simple Finals:
+a: 啊 (a - ah), 大 (dà - big), 马 (mǎ - horse)
+o: 哦 (ó - oh), 我 (wǒ - I), 多 (duō - many)
+e: 饿 (è - hungry), 了 (le - particle), 车 (chē - car)
+i: 衣 (yī - clothes), 你 (nǐ - you), 西 (xī - west)
+u: 五 (wǔ - five), 书 (shū - book), 路 (lù - road)
+ü: 女 (nǚ - female), 去 (qù - go), 雨 (yǔ - rain)
+
+Compound Finals:
+ai: 爱 (ài - love), 开 (kāi - open), 来 (lái - come)
+ei: 飞 (fēi - fly), 北 (běi - north), 谁 (shéi - who)
+ui: 对 (duì - correct), 水 (shuǐ - water), 会 (huì - can)
+ao: 好 (hǎo - good), 高 (gāo - high), 少 (shǎo - few)
+ou: 走 (zǒu - walk/go), 手 (shǒu - hand), 后 (hòu - after)
+iu: 六 (liù - six), 酒 (jiǔ - wine/alcohol), 修 (xiū - repair)
+ie: 谢 (xiè - thank), 爹 (diē - dad), 写 (xiě - write)
+üe: 学 (xué - learn/study), 月 (yuè - moon), 约 (yuē - appointment)
+er: 儿 (ér - child/son), 二 (èr - two), 而 (ér - and/but)
+
+Nasal Finals:
+an: 安 (ān - peace), 三 (sān - three), 看 (kàn - look)
+en: 人 (rén - person), 门 (mén - door), 本 (běn - book/root)
+in: 心 (xīn - heart), 金 (jīn - gold), 新 (xīn - new)
+un: 春 (chūn - spring), 问 (wèn - ask), 论 (lùn - discuss)
+ün: 云 (yún - cloud), 群 (qún - group), 军 (jūn - army)
+
+ang: 忙 (máng - busy), 长 (cháng - long), 方 (fāng - square/direction)
+eng: 风 (fēng - wind), 梦 (mèng - dream), 成 (chéng - become/success)
+ing: 听 (tīng - listen), 明 (míng - bright), 青年 (qīngnián - young person)
+ong: 中 (zhōng - middle), 红 (hóng - red), 东 (dōng - east)
+
+═══════════════════════════════════════════════════════════════
+
+TONES (声调) - 4 tones + neutral:
+
+1st Tone (¯): High Level
+  妈 (mā - mom), 爸 (bà - dad), 天 (tiān - sky), 心 (xīn - heart)
+
+2nd Tone (´): Rising
+  麻 (má - hemp), 白 (bái - white), 人 (rén - person), 明 (míng - bright)
+
+3rd Tone (ˇ): Falling-Rising
+  马 (mǎ - horse), 打 (dǎ - hit), 好 (hǎo - good), 水 (shuǐ - water)
+
+4th Tone (ˋ): Falling
+  骂 (mà - scold), 大 (dà - big), 去 (qù - go), 是 (shì - is)
+
+Neutral Tone: No mark
+  的 (de - possessive), 了 (le - particle), 吗 (ma - question particle)
+
+═══════════════════════════════════════════════════════════════
+
+COMMON EXAMPLE WORDS:
+
+Numbers: 一 (yī) 二 (èr) 三 (sān) 四 (sì) 五 (wǔ) 六 (liù) 七 (qī) 八 (bā) 九 (jiǔ) 十 (shí)
+Family: 爸爸 (bàba - dad) 妈妈 (māma - mom) 哥哥 (gēge - older brother) 姐姐 (jiějie - older sister)
+Time: 今天 (jīntiān - today) 明天 (míngtiān - tomorrow) 现在 (xiànzài - now)
+Basic Verbs: 吃 (chī - eat) 喝 (hē - drink) 睡 (shuì - sleep) 走 (zǒu - walk) 跑 (pǎo - run)
+Greetings: 你好 (nǐhǎo - hello) 谢谢 (xièxie - thank you) 再见 (zàijiàn - goodbye)`;
       return res.status(200).json({ result: mandarinAlphabet, detectedSource: 'en', targetUsed: 'zh' });
     }
   }
