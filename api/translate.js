@@ -225,34 +225,32 @@ module.exports = async function handler(req, res) {
       // Return simplified A-Z alphabet mapping
       const mandarinAlphabet = `Chinese Alphabet (汉语字母表):
 
-English | Chinese Character | Pinyin
-----------------------------------
-A       | 阿                | ā
-B       | 比                | bǐ
-C       | 西                | xī
-D       | 迪                | dí
-E       | 伊                | yī
-F       | 艾弗              | ài fú
-G       | 吉                | jí
-H       | 艾尺              | ài chǐ
-I       | 艾                | ài
-J       | 杰                | jié
-K       | 开                | kāi
-L       | 艾勒              | ài lè
-M       | 艾马              | ài mǎ
-N       | 艾娜              | ài nà
-O       | 哦                | ó
-P       | 屁                | pì
-Q       | 吉吾              | jí wú
-R       | 艾儿              | ài ér
-S       | 艾丝              | ài sī
-T       | 提                | tí
-U       | 伊吾              | yī wú
-V       | 维                | wéi
-W       | 豆贝尔维          | dòu bèi ěr wéi
-X       | 艾克斯            | yī kè sī
-Y       | 吾艾              | wú ài
-Z       | 贼德              | zéi dé`;
+A 阿 ā
+B 比 bǐ
+C 西 xī
+D 迪 dí
+E 伊 yī
+F 艾弗 ài fú
+G 吉 jí
+H 艾尺 ài chǐ
+I 艾 ài
+J 杰 jié
+K 开 kāi
+L 艾勒 ài lè
+M 艾马 ài mǎ
+N 艾娜 ài nà
+O 哦 ó
+P 屁 pì
+Q 吉吾 jí wú
+R 艾儿 ài ér
+S 艾丝 ài sī
+T 提 tí
+U 伊吾 yī wú
+V 维 wéi
+W 豆贝尔维 dòu bèi ěr wéi
+X 艾克斯 yī kè sī
+Y 吾艾 wú ài
+Z 贼德 zéi dé`;
       return res.status(200).json({ result: mandarinAlphabet, detectedSource: 'en', targetUsed: 'zh' });
     }
   }
