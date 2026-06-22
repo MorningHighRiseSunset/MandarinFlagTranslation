@@ -82,6 +82,80 @@ const codeToSpeechLang = {
 };
 let lastTranslation = { text: '', langCode: '' };
 
+// Render alphabet with speaker buttons for audio playback
+function renderAlphabetWithAudio(output, text) {
+    output.innerHTML = '';
+    
+    // Split text into lines
+    const lines = text.split('\n').filter(line => line.trim());
+    
+    // Create container
+    const container = document.createElement('div');
+    container.style.cssText = 'display: flex; flex-direction: column; gap: 8px;';
+    
+    lines.forEach(line => {
+        if (line.includes('Chinese Alphabet') || line.includes('汉语字母表')) {
+            // Title line
+            const title = document.createElement('div');
+            title.textContent = line;
+            title.style.cssText = 'font-weight: bold; margin-bottom: 10px;';
+            container.appendChild(title);
+        } else if (line.trim()) {
+            // Parse line: "A 阿 ā"
+            const parts = line.trim().split(/\s+/);
+            if (parts.length >= 3) {
+                const letter = parts[0];
+                const chinese = parts[1];
+                const pinyin = parts.slice(2).join(' ');
+                
+                const row = document.createElement('div');
+                row.style.cssText = 'display: flex; align-items: center; gap: 10px;';
+                
+                // Letter
+                const letterSpan = document.createElement('span');
+                letterSpan.textContent = letter;
+                letterSpan.style.cssText = 'font-weight: bold; min-width: 30px;';
+                
+                // Chinese character
+                const chineseSpan = document.createElement('span');
+                chineseSpan.textContent = chinese;
+                chineseSpan.style.cssText = 'font-size: 1.2em; min-width: 40px;';
+                
+                // Pinyin
+                const pinyinSpan = document.createElement('span');
+                pinyinSpan.textContent = pinyin;
+                pinyinSpan.style.cssText = 'color: #666; min-width: 80px;';
+                
+                // Speaker button
+                const speakerBtn = document.createElement('button');
+                speakerBtn.innerHTML = '🔊';
+                speakerBtn.style.cssText = 'background: #4CAF50; color: white; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center;';
+                speakerBtn.onclick = () => playPinyinAudio(pinyin);
+                
+                row.appendChild(letterSpan);
+                row.appendChild(chineseSpan);
+                row.appendChild(pinyinSpan);
+                row.appendChild(speakerBtn);
+                container.appendChild(row);
+            }
+        }
+    });
+    
+    output.appendChild(container);
+}
+
+// Play Pinyin audio using Web Speech API
+function playPinyinAudio(pinyin) {
+    if ('speechSynthesis' in window) {
+        const utterance = new SpeechSynthesisUtterance(pinyin);
+        utterance.lang = 'zh-CN';
+        utterance.rate = 0.8;
+        speechSynthesis.speak(utterance);
+    } else {
+        alert('Text-to-speech not supported in this browser');
+    }
+}
+
 // Voice recognition (Web Speech API) helpers
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
 let recognition = null;
@@ -314,7 +388,13 @@ async function startTranslate() {
             output.textContent = 'Error: ' + data.error;
         } else {
             const result = data.result || '';
-            typeOutputAnimated(output, result);
+            
+            // Check if this is an alphabet response and add speaker buttons
+            if (result.includes('Chinese Alphabet') || result.includes('汉语字母表')) {
+                renderAlphabetWithAudio(output, result);
+            } else {
+                typeOutputAnimated(output, result);
+            }
 
             // Store last translation and show Play button; do not auto-speak
             const manualToggleEl = document.getElementById('manualToggle');
