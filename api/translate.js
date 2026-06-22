@@ -205,19 +205,19 @@ module.exports = async function handler(req, res) {
 
   // Check for alphabet listing requests first
   const alphabetPatterns = [
-    // English patterns
-    /(?:show\s+me\s+the\s+)?(?:mandarin|chinese)\s+alphabet/i,
-    /(?:show\s+me\s+the\s+)?(?:mandarin|chinese)\s+pinyin/i,
-    /list\s+(?:the\s+)?(?:mandarin|chinese)\s+alphabet/i,
-    /list\s+(?:the\s+)?(?:mandarin|chinese)\s+pinyin/i,
-    /what\s+(?:is|'s)\s+the\s+(?:mandarin|chinese)\s+alphabet/i,
-    /what\s+(?:is|'s)\s+the\s+(?:mandarin|chinese)\s+pinyin/i,
+    // English patterns - more flexible to match without language name
+    /(?:show\s+me\s+)?(?:the\s+)?(?:mandarin|chinese)?\s*alphabet/i,
+    /(?:show\s+me\s+)?(?:the\s+)?(?:mandarin|chinese)?\s*pinyin/i,
+    /list\s+(?:the\s+)?(?:mandarin|chinese)?\s*alphabet/i,
+    /list\s+(?:the\s+)?(?:mandarin|chinese)?\s*pinyin/i,
+    /what\s+(?:is|'s)\s+(?:the\s+)?(?:mandarin|chinese)?\s*alphabet/i,
+    /what\s+(?:is|'s)\s+(?:the\s+)?(?:mandarin|chinese)?\s*pinyin/i,
     // Mandarin patterns
-    /(?:中|中文|汉语)\s*字母/i,
-    /(?:中|中文|汉语)\s*拼音/i,
-    /列出\s*(?:中|中文|汉语)\s*字母/i,
-    /列出\s*(?:中|中文|汉语)\s*拼音/i,
-    /(?:中|中文|汉语)\s*字母表/i
+    /(?:中|中文|汉语)?\s*字母/i,
+    /(?:中|中文|汉语)?\s*拼音/i,
+    /列出\s*(?:中|中文|汉语)?\s*字母/i,
+    /列出\s*(?:中|中文|汉语)?\s*拼音/i,
+    /(?:中|中文|汉语)?\s*字母表/i
   ];
 
   for (const p of alphabetPatterns) {
